@@ -1,0 +1,37 @@
+{
+  "name": "backendmono",
+  "version": "1.0.0",
+  "description": "The Project intends to be hosted for integration basic flows for BYI including User Onboarding, Portfolio Creation, Account funding, Order Flows and Performance Indicators.",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon src/server.js",
+    "deploy": "firebase deploy --only functions:api"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BuildYourIndyfund/BackendMono.git"
+  },
+  "author": "Prashant",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BuildYourIndyfund/BackendMono/issues"
+  },
+  "homepage": "https://github.com/BuildYourIndyfund/BackendMono#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "firebase": "^10.13.2",
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.0.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  },
+  "engines": {
+    "node": "18"
+  }
+}
