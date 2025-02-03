@@ -138,9 +138,31 @@ app.post("/onboard", async (req, res) => {
 });
 
 //Da
-app.post("/performance", (req, res) => {
-  portfolio.fetchFundPerformance(req.accountId, req.period, req.timeFrame);
-})
+app.post("/performance", async (req, res) => {
+  try {
+    // Extract parameters from the request body
+    const { accountId, period, timeFrame } = req.body;
+
+    // Validate the required parameters
+    if (!accountId || !period || !timeFrame) {
+      return res.status(400).json({ message: "Missing required parameters: accountId, period, or timeFrame." });
+    }
+
+    // Ensure `fetchFundPerformance` exists in the imported portfolio module
+    if (!portfolio.fetchFundPerformance || typeof portfolio.fetchFundPerformance !== "function") {
+      throw new Error("fetchFundPerformance is not a valid function in the portfolio module.");
+    }
+
+    // Call the function and return the result
+    const result = await portfolio.fetchFundPerformance(accountId, period, timeFrame);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in /performance endpoint:", error.message);
+
+    // Handle specific errors or fallback to a generic internal server error
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+});
 
 // Bank Settings & Fund Transfer
 app.get("/getBankRelations", (req, res) => {

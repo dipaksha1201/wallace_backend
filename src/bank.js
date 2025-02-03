@@ -8,9 +8,9 @@ export const getAchRelations = (accountId, res) => {
             Authorization: `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`
         },
     })
-    .then(data => data.json())
-    .then(data => res.status(200).json(data[0].id))
-    .catch(err => res.status(400).json("Unable to fetch details"));
+        .then(data => data.json())
+        .then(data => res.status(200).json(data[0].id))
+        .catch(err => res.status(400).json("Unable to fetch details"));
 }
 
 export const submitFunds = (req, res) => {
@@ -51,30 +51,55 @@ export const createACH = (req, res) => {
             },
             body: JSON.stringify(req)
         })
-        .then(data => { return data.json() })
-        .then(data => {
-            if (data !== null && data !== undefined) {
-                res.status(200).json("Bank Details succesfully added");
-            }
-        })
-        .catch(err => res.status(401).json("Denied"));
+            .then(data => { return data.json() })
+            .then(data => {
+                if (data !== null && data !== undefined) {
+                    res.status(200).json("Bank Details succesfully added");
+                }
+            })
+            .catch(err => res.status(401).json("Denied"));
     } else {
         res.status(500).json("Please fill all the fields");
     }
 }
 
-export const findBuyingPower = (accountId, res) => {
-    fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${accountId}/account`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`,
-            'content-type': 'application/json'
+export const findBuyingPower = async (accountId, res) => {
+    try {
+        // Make the API call
+        console.log("Account ID:", accountId);
+        const response = await fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${accountId}/account`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`,
+                'content-type': 'application/json'
+            }
+        });
+
+        // Check if the response status is OK
+        if (!response.ok) {
+            const errorMessage = `Error: Received status ${response.status} from API.`;
+            console.error(errorMessage);
+            return res.status(500).json(errorMessage);
         }
-    })
-        .then(data => data.json())
-        .then(data => res.status(200).json(data.buying_power))
-        .catch(err => res.status(500).json("Please try again"));
-}
+
+        // Parse the JSON response
+        const data = await response.json();
+
+        // Validate the presence of buying power in the response
+        if (!data.buying_power) {
+            const errorMessage = "Error: 'buying_power' not found in the API response.";
+            console.error(errorMessage, data);
+            return res.status(500).json(errorMessage);
+        }
+
+        // Return the buying power
+        return res.status(200).json({ buying_power: data.buying_power });
+    } catch (error) {
+        // Catch and log any other errors
+        console.error("Error in findBuyingPower:", error.message);
+        return res.status(500).json("Internal server error, please try again.");
+    }
+};
 
 // function formatNumberWithCommas(inputString) {
 //     // Parse the input string to a floating-point number
@@ -118,8 +143,8 @@ const fetchTransfers = () => {
             'content-type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Transactions",  data);
-    })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Transactions", data);
+        })
 };
