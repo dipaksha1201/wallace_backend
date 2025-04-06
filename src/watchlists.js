@@ -13,82 +13,74 @@
 // }
 
 export const fetchWatchlistId = (account_id) => {
-    fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/watchlists`, {
+    return fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/watchlists`, {
         method: 'GET',
         headers: {
             'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`
         }
     })
-        .then(data => data.json())
-        .then(data => {
-            if (data[0] !== undefined && data[0] !== null) {
-                return (data[0].id)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
             }
-        }).catch(err => { console.log(err) })
+            return response.json();
+        })
+        .then(data => {
+            console.log("Watchlists data:", data);
+            if (data[0] !== undefined && data[0] !== null) {
+                return data[0].id;
+            }
+            return null; // Return null if no watchlist is found
+        }).catch(err => { 
+            console.error('Error in fetchWatchlistId:', err);
+            throw err; // Re-throw to allow handling in the calling function
+        });
 }
 
 export const doesExist = (account_id) => {
-    fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/watchlists`, {
+    return fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/watchlists`, {
         method: 'GET',
         headers: {
             'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`
         }
     })
-        .then(data => data.json())
+        .then(response => response.json())
         .then(data => {
             if (data[0] !== undefined) {
-                return (true)
+                return true;
             }
+            return false;
         })
-        .catch(err => { return (false) })
+        .catch(err => { 
+            console.error('Error in doesExist:', err);
+            return false; 
+        });
 }
 
 export const getWatchlist = (account_id, res) => {
-    const watchListId = fetchWatchlistId(account_id);
-    if (watchListId != undefined && watchListId.length > 0) {
-        fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/watchlists/${watchlistID}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`
+    fetchWatchlistId(account_id)
+        .then(watchListId => {
+            console.log("watchListId:", watchListId);
+            if (watchListId != null && watchListId.length > 0) {
+                return fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/watchlists/${watchListId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    res.status(200).json({ assets: data.assets, id: watchListId });
+                });
+            } else {
+                res.status(404).json("No Watchlists Found");
             }
         })
-            .then(data => data.json())
-            .then(data => res.staus(200).json({ assets: data.assets, id: watchListId }))
-            .catch((err) => res.status(500).json("Internal Server Error"))
-    } else {
-        res.status(404).json("No Watchlists Found");
-    }
+        .catch(err => {
+            console.error("Error in getWatchlist:", err);
+            res.status(500).json("Internal Server Error");
+        });
 }
-
-// const updateWatchlist = (accountId, stock) => {
-//     if (!exists(watchList)) {
-//         return createNewList(stock);
-//     }
-//     else if (watchlist.size == 0 && !isFirst && watchlistId === "") {
-//             fetchWatchlist();
-//             alert("Please try adding the stock again")
-//     } else if (watchlist.has(stock)) {
-//         removeFromWatchlist(stock);
-//     } else {
-//         addToWatchlist(stock);
-//     }
-// }
-
-// const exists = (watchlist) => {
-//     if (watchlist.length > 0) {
-//         fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/watchlists/${watchlist}`, {
-//             method: 'GET',
-//             headers: {
-//                 'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`
-//             }
-//         })
-//         .then(data => data.json())
-//         .then(data => {
-//             if (data.length > 0)
-//                 return true;
-//             else return false;
-//         }).catch(err => )}
-// }
 
 export const createNewList = (account_id, updatedWatchList, res) => {
     fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/watchlists/`, {
@@ -104,43 +96,112 @@ export const createNewList = (account_id, updatedWatchList, res) => {
     })
         .then(data => {
             if (data.status === 200) {
-                const watchListId = fetchWatchlistId(account_id);
-                if (watchListId != undefined)
-                    res.status(200).json("Succesfully added to watchlist", watchListId);
-                else res.status(400).json("Invalid Request")
+                fetchWatchlistId(account_id)
+                    .then(watchListId => {
+                        if (watchListId != null)
+                            res.status(200).json("Successfully added to watchlist", watchListId);
+                    })
+                    .catch(err => {
+                        console.error("Error fetching watchlist ID:", err);
+                        res.status(500).json("Error fetching watchlist ID");
+                    });
             }
         })
-        .catch(err => res.status(500).json("Server Error"))
+        .catch(err => {
+            console.error("Error creating new list:", err);
+            res.status(500).json("Error creating new list");
+        });
 }
 
-export const updateWatchlist = (stock, action, account_id, watchlistName, res) => {
-    if (!doesExist(account_id)) {
-        const list = [];
-        list.push(stock);
-        createNewList(account_id, list, res);
-    } else {
-        let list = [];
-        const watchlistId = fetchWatchlistId(account_id);
-        if (watchlistId != undefined && watchlistId.length > 0) {
-            fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/watchlists/${watchlistID}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`
-                }
-            })
-                .then(data => data.json())
-                .then(data => { list = data.assets; list.push(stock); return list; })
-                .then(submitWatchlist(account_id, watchlistId, watchlistName, list, res))
-        } else {
-            res.status(400).json("Try again")
-        }
+export const updateWatchlist = (account_id, stock, res, action = 'add') => {
+    // Validate action parameter
+    if (action !== 'add' && action !== 'remove') {
+        return res.status(400).json({ message: "Invalid action. Must be 'add' or 'remove'" });
     }
+    
+    // If action is remove but no watchlist exists, return error
+    doesExist(account_id)
+        .then(exists => {
+            if (!exists) {
+                if (action === 'remove') {
+                    return res.status(404).json({ message: "Cannot remove from non-existent watchlist" });
+                }
+                // For add action, create a new list
+                const list = [];
+                list.push(stock);
+                return createNewList(account_id, list, res);
+            } else {
+                // Watchlist exists, fetch its ID
+                return fetchWatchlistId(account_id)
+                    .then(watchlistId => {
+                        console.log("watchlistId:", watchlistId);
+                        if (watchlistId != null) {
+                            // Fetch current watchlist contents
+                            return fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/watchlists/${watchlistId}`, {
+                                method: 'GET',
+                                headers: {
+                                    'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`
+                                }
+                            })
+                                .then(data => data.json())
+                                .then(data => { 
+                                    console.log("data:", data);
+                                    let list = data.assets; 
+                                    
+                                    // Create a new list of symbols for submission
+                                    let symbolsList = [];
+                                    
+                                    // First, extract all existing symbols
+                                    if (list && Array.isArray(list)) {
+                                        symbolsList = list.map(item => item.symbol);
+                                    }
+                                    
+                                    if (action === 'add') {
+                                        // Check if stock already exists in the list
+                                        if (!symbolsList.includes(stock)) {
+                                            symbolsList.push(stock);
+                                        } else {
+                                            return res.status(200).json({ message: "Stock already in watchlist" });
+                                        }
+                                    } else if (action === 'remove') {
+                                        // Filter out the stock to remove
+                                        const originalLength = symbolsList.length;
+                                        symbolsList = symbolsList.filter(symbol => symbol !== stock);
+                                        
+                                        // If no stock was removed, it wasn't in the list
+                                        if (symbolsList.length === originalLength) {
+                                            return res.status(404).json({ message: "Stock not found in watchlist" });
+                                        }
+                                    }
+                                    
+                                    // Update the watchlist with the new list of symbols
+                                    return submitWatchlist(account_id, watchlistId, data.name, symbolsList, res);
+                                })
+                                .catch(err => {
+                                    console.error("Error fetching watchlist:", err);
+                                    return res.status(500).json("Error fetching watchlist");
+                                });
+                        } else {
+                            return res.status(400).json("Try again");
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Error fetching watchlist ID:", err);
+                        return res.status(500).json("Error fetching watchlist ID");
+                    });
+            }
+        })
+        .catch(err => {
+            console.error("Error checking if watchlist exists:", err);
+            return res.status(500).json("Error checking if watchlist exists");
+        });
 }
 
 const submitWatchlist = (accountid, watchlistId, watchlistName, watchlist, res) => {
-    fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${accountid}/watchlists/${watchlistId}`, {
+    return fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${accountid}/watchlists/${watchlistId}`, {
         method: 'PUT',
         headers: {
+            'Content-Type': 'application/json',
             'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`
         },
         body: JSON.stringify({
@@ -155,61 +216,8 @@ const submitWatchlist = (accountid, watchlistId, watchlistName, watchlist, res) 
                 res.status(400).json("Try Again");
             }
         })
-        .catch(err => res.status(500).json("Server Error"))
+        .catch(err => {
+            console.error("Error submitting watchlist:", err);
+            res.status(500).json("Server Error");
+        });
 }
-
-// const fetchPrices = (assets) => {
-//     let portfolioArray = [];
-//     assets.forEach((value) => {
-//         portfolioArray.push(value.symbol);
-//     });
-//     if (portfolioArray.length === 0) return;
-//     let queryString = "";
-//     portfolioArray.forEach((symbol) => {
-//         queryString = queryString + symbol + ",";
-//     });
-//     const URL = "https://data.sandbox.alpaca.markets/v2/stocks/snapshots?symbols=" + queryString;
-//     fetch(URL, {
-//         method: 'GET',
-//         headers: {
-//             'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`
-//         }
-//     }).then(data => data.json()).then(data => {
-//         const stockData = {};
-//         if (data !== undefined && data !== null && Object.entries(data).length > 0) {
-//             Object.entries(data).forEach(([key, value]) => {
-//                 const stock = { price: "", percentChange: "", dailyChange: "" };
-//                 stock.price = value.latestTrade.p;
-//                 stock.dailyChange = Number(parseFloat(value.latestTrade.p) - parseFloat(value.prevDailyBar.c)).toFixed(2);
-//                 stock.percentChange = Number((parseFloat(value.latestTrade.p) - parseFloat(value.prevDailyBar.c)) / parseFloat(value.prevDailyBar.c) * 100).toFixed(2);
-//                 stockData[key] = stock;
-//             })
-//         } return stockData;
-//     }).then(stockData => setPortfolioState(stockData)).catch(err => console.log(err));
-// }
-
-// const removeFromWatchlist = (stock) => {
-//     let updatedList = [];
-//     for (const item of watchlistAssets) {
-//         if (item.symbol !== stock) {
-//             updatedList.push(item.symbol);
-//         }
-//     }
-//     fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/watchlists/${watchlistID}`, {
-//         method : 'PUT',
-//         headers : {
-//             'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`
-//         },
-//         body : JSON.stringify({
-//             name : "",
-//             symbols : updatedList
-//         })
-//     })
-//     .then(data => {
-//         if (data.status == 200) {
-//             getWatchlist();
-//         }
-//     })
-//     .catch(err => console.log(err))
-//     console.log("FD ",updatedList);
-// }

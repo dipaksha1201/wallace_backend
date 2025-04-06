@@ -7,8 +7,7 @@ const getPortfolio = () => {
 }
 
 const fetchFundPerformance = (account_id, period, timeFrame) => {
-    fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/account/portfolio/history?period=${period}&timeframe=${timeFrame}`, {
-
+    return fetch(`https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${account_id}/account/portfolio/history?period=${period}&timeframe=${timeFrame}`, {
         method: 'GET',
         headers: {
             'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`
@@ -48,9 +47,12 @@ const fetchFundPerformance = (account_id, period, timeFrame) => {
             });
             const x = dateObjects;
             const y = data.equity;
-            const newPerformance = { xData: x, yData: y };
-            // setPerformance(newPerformance);
-        }).catch(err => console.log(err));
+            const newPerformance = { xData: x, yData: y , performance: data.profit_loss_pct };
+            return newPerformance;
+        }).catch(err => {
+            console.error('Error in fetchFundPerformance:', err);
+            throw err; // Re-throw to allow handling in the calling function
+        });
 }
 
 export default { getPortfolio, fetchFundPerformance };

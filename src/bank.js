@@ -9,8 +9,15 @@ export const getAchRelations = (accountId, res) => {
         },
     })
         .then(data => data.json())
-        .then(data => res.status(200).json(data[0].id))
-        .catch(err => res.status(400).json("Unable to fetch details"));
+        .then(data => res.status(200).json(data))
+        .catch(async err => {
+            if (err.response) {
+                const errorData = await err.response.json();
+                res.status(err.response.status).json(errorData);
+            } else {
+                res.status(400).json({ message: err.message || "Unable to fetch details" });
+            }
+        });
 }
 
 export const submitFunds = (req, res) => {
@@ -32,7 +39,14 @@ export const submitFunds = (req, res) => {
             if (data.status === 200) res.status(200).json("Funds Succesfully Queued, please wait till the buying power updates.")
             else if (data.status === 422) res.status(422).json("Fund transfer already initiated. Please wait before initiating another transfer.")
             else res.status(500).json("Something went wrong, please try again later");
-        }).catch(err => res.status(500).json("Something went wrong, please try again later"))
+        }).catch(async err => {
+            if (err.response) {
+                const errorData = await err.response.json();
+                res.status(err.response.status).json(errorData);
+            } else {
+                res.status(500).json({ message: err.message || "Something went wrong, please try again later" });
+            }
+        });
     } else {
         if (req.relationship === undefined) {
             res.status(500).json("Please add your bank details to begin funding your account");
@@ -54,10 +68,19 @@ export const createACH = (req, res) => {
             .then(data => { return data.json() })
             .then(data => {
                 if (data !== null && data !== undefined) {
+                    console.log("Bank Details added successfully");
+                    console.log(data);
                     res.status(200).json("Bank Details succesfully added");
                 }
             })
-            .catch(err => res.status(401).json("Denied"));
+            .catch(async err => {
+                if (err.response) {
+                    const errorData = await err.response.json();
+                    res.status(err.response.status).json(errorData);
+                } else {
+                    res.status(401).json({ message: err.message || "Denied" });
+                }
+            });
     } else {
         res.status(500).json("Please fill all the fields");
     }
@@ -101,26 +124,6 @@ export const findBuyingPower = async (accountId, res) => {
     }
 };
 
-// function formatNumberWithCommas(inputString) {
-//     // Parse the input string to a floating-point number
-//     const floatValue = parseFloat(inputString);
-//     // Check if the input is a valid number
-//     if (isNaN(floatValue)) {
-//         return 0;
-//     }
-//     // Convert the number to an integer and add commas for thousands separators
-//     const formattedString = floatValue.toFixed(0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
-//     return formattedString;
-// }
-// const fetchBankDetails = () => {
-//     fetch(`https://broker-api.sandbox.alpaca.markets/v1/accounts/${account_id}/ach_relationships`, {
-//         method: 'GET',
-//         headers: {
-//             'Authorization': `Basic ${btoa('CK1EORZKTUUZAJ66071D:28Q354poQSbZ6i6FWrGSZJIjObkJfyZavYhOZ1H1')}`,
-//             'content-type': 'application/json'
-//         }
-//     }).then(data => data.json()).then(data => setBankDetails(data)).catch(err => console.log(err));
-// }
 export const deleteBankDetails = (account_id, relationship, res) => {
     fetch(`https://broker-api.sandbox.alpaca.markets/v1/accounts/${account_id}/ach_relationships/${relationship}`, {
         method: 'DELETE',
@@ -132,7 +135,14 @@ export const deleteBankDetails = (account_id, relationship, res) => {
         .then(data => {
             if (data.status === 204) res.status(200).json("Bank Details succesfully deleted");
             // setRelationship(null);
-        }).catch(err => res.status(500).json("Please try again"));
+        }).catch(async err => {
+            if (err.response) {
+                const errorData = await err.response.json();
+                res.status(err.response.status).json(errorData);
+            } else {
+                res.status(500).json({ message: err.message || "Please try again" });
+            }
+        });
 }
 
 const fetchTransfers = () => {
@@ -146,5 +156,5 @@ const fetchTransfers = () => {
         .then(response => response.json())
         .then(data => {
             console.log("Transactions", data);
-        })
+        });
 };

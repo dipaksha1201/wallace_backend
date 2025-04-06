@@ -58,13 +58,14 @@ export const submitForm = (form, res) => {
         body: JSON.stringify(form),
     })
         .then(response => {
-            return response.json() 
+            status = response.status;
+            return response.json()
         })
         .then(response => {
-            console.log(response)
             if (status === 200) {
+                console.log("status is 200")
                 setDoc(doc(collection(db, "onboardForm"), form.contact.email_address), response)
-                    .then(res.status(200).json({"username" : response.id, "message" : "Successfully onboarded to Alpaca"}))
+                    .then(res.status(200).json({ "username": response.id, "message": "Successfully onboarded to Alpaca" }))
             } else if (status === 400) {
                 res.status(400).json("Please fill all the mandatory fields");
             } else if (status === 409) {
@@ -72,10 +73,15 @@ export const submitForm = (form, res) => {
             } else if (status === 400) {
                 res.status(400).json("One of the input values is not a valid value");
             } else {
+                console.log("response", response)
+                console.log("status", status)
                 res.status(500).json("Something went wrong, please try again");
             }
         })
-        .catch(err => {console.log(err); res.status(500).json("Something went wrong, please try again")});
+        .catch(err => {
+            console.log(err);
+            res.status(500).json("Something went wrong, please try again")
+        });
 }
 
 export const handleSignUp = async (user, pwd, res) => {
@@ -88,15 +94,15 @@ export const handleSignUp = async (user, pwd, res) => {
                     password: pwd,
                     isOnboarded: false
                 })
-                .then(
-                    res.status(200).json("begin Onboarding")
-                ).catch(
-                    err => {
-                        res.send(500).json("something went wrong");
-                    }
-                )
+                    .then(
+                        res.status(200).json("begin Onboarding")
+                    ).catch(
+                        err => {
+                            res.send(500).json("something went wrong");
+                        }
+                    )
             } else {
-                res.status(403).send("Please use another username")   
+                res.status(403).send("Please use another username")
             }
         })
 }
